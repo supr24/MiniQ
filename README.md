@@ -18,7 +18,7 @@
 **MiniQ: Multi-Phase SQL Compiler with Semantic Analysis**
 
 ## 1.2 GitHub URL
-https://github.com/your-username/miniq-compiler
+https://github.com/supr24/MiniQ/tree/main
 
 ## 1.3 Project Description
 MiniQ is a complete SQL compiler that converts simple English-like queries into standard SQL code. It implements all 5 compiler phases with real-time visualization: Lexer, Parser, AST, Semantic Analysis, and Code Generation. Users can write simple commands instead of complex SQL syntax. The project includes 20 example queries and works with 6 different data tables. Each compilation step is displayed in real-time, making it perfect for learning how compilers work.
