@@ -335,3 +335,42 @@ class SemanticAnalyzer:
         for f in stmt['fields']:
             if f != '*' and f not in fields:
                 self.errors.append(f"Field '{f}' not found")
+
+# ============================================
+# PHASE 5: CODE GENERATOR - Ridham Singh
+# ============================================
+class CodeGen:
+    def __init__(self, ast):
+        self.ast = ast
+        self.select_fields = ['*']
+        self.from_table = ''
+        self.where = ''
+        self.group_by = ''
+        self.order_by = ''
+        self.limit = ''
+        self.aggregates = []
+    
+    def generate(self):
+        for stmt in self.ast.get('statements', []):
+            if stmt['type'] == 'LoadStatement':
+                self.from_table = stmt['table']
+            elif stmt['type'] == 'SelectStatement':
+                self.select_fields = stmt['fields']
+            elif stmt['type'] == 'FilterStatement':
+                cond = stmt['condition']
+                val = f"'{cond['value']}'" if isinstance(cond['value'], str) else cond['value']
+                self.where = f"WHERE {cond['field']} {cond['operator']} {val}"
+            elif stmt['type'] == 'SortStatement':
+                self.order_by = f"ORDER BY {stmt['field']} {stmt['direction'].upper()}"
+            elif stmt['type'] == 'GroupStatement':
+                self.group_by = f"GROUP BY {stmt['field']}"
+            elif stmt['type'] == 'LimitStatement':
+                self.limit = f"LIMIT {stmt['count']}"
+            elif stmt['type'] == 'AggregateStatement':
+                for f in stmt['functions']:
+                    alias = f" AS {f['alias']}" if f['alias'] else ""
+                    self.aggregates.append(f"{f['function'].upper()}({f['field']}){alias}")
+        
+        select = f"SELECT {', '.join(self.aggregates) if self.aggregates else ', '.join(self.select_fields)}"
+        query = '\n'.join(filter(None, [select, f"FROM {self.from_table}", self.where, self.group_by, self.order_by, self.limit]))
+        return query + ';'
