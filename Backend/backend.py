@@ -102,3 +102,173 @@ class Lexer:
                     i += 1
         
         return self.tokens
+
+# ============================================
+# PHASE 2 & 3: PARSER & AST - Ridham Singh
+# ============================================
+class Parser:
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.pos = 0
+        self.errors = []
+    
+    def parse(self):
+        ast = {'type': 'Program', 'statements': []}
+        
+        while self.pos < len(self.tokens):
+            stmt = self.parse_statement()
+            if stmt:
+                ast['statements'].append(stmt)
+        
+        return ast
+    
+    def parse_statement(self):
+        token = self.peek()
+        if not token:
+            return None
+        
+        if token['value'] == 'load':
+            return self.parse_load()
+        elif token['value'] == 'filter':
+            return self.parse_filter()
+        elif token['value'] == 'select':
+            return self.parse_select()
+        elif token['value'] == 'sort':
+            return self.parse_sort()
+        elif token['value'] == 'group':
+            return self.parse_group()
+        elif token['value'] == 'aggregate':
+            return self.parse_aggregate()
+        elif token['value'] == 'limit':
+            return self.parse_limit()
+        else:
+            self.pos += 1
+            return None
+    
+    def parse_load(self):
+        self.consume('KEYWORD', 'load')
+        table = self.consume('IDENTIFIER')
+        return {'type': 'LoadStatement', 'table': table['value']} if table else None
+    
+    def parse_filter(self):
+        self.consume('KEYWORD', 'filter')
+        condition = self.parse_condition()
+        return {'type': 'FilterStatement', 'condition': condition} if condition else None
+    
+    def parse_select(self):
+        self.consume('KEYWORD', 'select')
+        fields = []
+        
+        if self.peek() and self.peek()['type'] == 'WILDCARD':
+            self.pos += 1
+            fields.append('*')
+        else:
+            field = self.consume('IDENTIFIER')
+            if field:
+                fields.append(field['value'])
+                while self.peek() and self.peek().get('value') == ',':
+                    self.pos += 1
+                    f = self.consume('IDENTIFIER')
+                    if f:
+                        fields.append(f['value'])
+        
+        return {'type': 'SelectStatement', 'fields': fields}
+    
+    def parse_sort(self):
+        self.consume('KEYWORD', 'sort')
+        self.consume('KEYWORD', 'by')
+        field = self.consume('IDENTIFIER')
+        
+        direction = 'asc'
+        if self.peek() and self.peek()['value'] in ['asc', 'desc']:
+            direction = self.consume('KEYWORD')['value']
+        
+        return {'type': 'SortStatement', 'field': field['value'], 'direction': direction} if field else None
+    
+    def parse_group(self):
+        self.consume('KEYWORD', 'group')
+        self.consume('KEYWORD', 'by')
+        field = self.consume('IDENTIFIER')
+        return {'type': 'GroupStatement', 'field': field['value']} if field else None
+    
+    def parse_aggregate(self):
+        self.consume('KEYWORD', 'aggregate')
+        functions = []
+        
+        func = self.parse_agg_func()
+        if func:
+            functions.append(func)
+        
+        while self.peek() and self.peek().get('value') == ',':
+            self.pos += 1
+            f = self.parse_agg_func()
+            if f:
+                functions.append(f)
+        
+        return {'type': 'AggregateStatement', 'functions': functions}
+    
+    def parse_agg_func(self):
+        func_name = self.consume('KEYWORD')
+        if not func_name:
+            func_name = self.consume('IDENTIFIER')
+        if not func_name:
+            return None
+        
+        if not (self.peek() and self.peek().get('value') == '('):
+            return None
+        self.pos += 1
+        
+        field = '*'
+        if self.peek() and self.peek()['type'] == 'WILDCARD':
+            self.pos += 1
+        elif self.peek() and self.peek()['type'] == 'IDENTIFIER':
+            field = self.consume('IDENTIFIER')['value']
+        
+        if self.peek() and self.peek().get('value') == ')':
+            self.pos += 1
+        
+        alias = None
+        if self.peek() and self.peek().get('value') == 'as':
+            self.pos += 1
+            a = self.consume('IDENTIFIER')
+            if a:
+                alias = a['value']
+        
+        return {'function': func_name['value'], 'field': field, 'alias': alias}
+    
+    def parse_limit(self):
+        self.consume('KEYWORD', 'limit')
+        count = self.consume('NUMBER')
+        return {'type': 'LimitStatement', 'count': count['value']} if count else None
+    
+    def parse_condition(self):
+        field = self.consume('IDENTIFIER')
+        if not field:
+            return None
+        op = self.consume('OPERATOR')
+        if not op:
+            return None
+        
+        value = None
+        if self.peek() and self.peek()['type'] == 'NUMBER':
+            value = self.consume('NUMBER')['value']
+        elif self.peek() and self.peek()['type'] == 'STRING':
+            value = self.consume('STRING')['value']
+        elif self.peek() and self.peek()['type'] == 'IDENTIFIER':
+            value = self.consume('IDENTIFIER')['value']
+        
+        return {'field': field['value'], 'operator': op['value'], 'value': value}
+    
+    def peek(self):
+        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
+    
+    def consume(self, typ=None, val=None):
+        token = self.peek()
+        if not token:
+            return None
+        if typ and token['type'] != typ:
+            return None
+        if val and token['value'] != val:
+            return None
+        self.pos += 1
+        return token
