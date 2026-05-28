@@ -176,3 +176,67 @@ function buildASTTree(ast) {
     html += '</pre>';
     return html;
 }
+
+// ========== SYMBOL TABLE FORMATTING ========== -- Supriya Rawat
+function formatSymbolTable(st) {
+    let table = '═══════════════════════════════════\n';
+    table += '       SYMBOL TABLE\n';
+    table += '═══════════════════════════════════\n\n';
+    
+    if (st.tables && Object.keys(st.tables).length > 0) {
+        table += '📦 TABLES LOADED:\n';
+        table += '───────────────────────────────────\n';
+        Object.keys(st.tables).forEach(name => {
+            table += `  ${name}\n`;
+            table += `    Fields: [${st.tables[name].fields.join(', ')}]\n`;
+        });
+        table += '\n';
+    }
+    
+    if (st.fields && Object.keys(st.fields).length > 0) {
+        table += '📋 FIELDS REFERENCED:\n';
+        table += '───────────────────────────────────\n';
+        Object.keys(st.fields).forEach(name => {
+            table += `  ${name}\n`;
+        });
+        table += '\n';
+    }
+    
+    if (st.aggregates && st.aggregates.length > 0) {
+        table += '∑ AGGREGATE FUNCTIONS:\n';
+        table += '───────────────────────────────────\n';
+        st.aggregates.forEach(agg => {
+            table += `  ${agg.function.toUpperCase()}(${agg.field})`;
+            if (agg.alias) table += ` AS ${agg.alias}`;
+            table += '\n';
+        });
+    }
+    
+    table += '═══════════════════════════════════';
+    return table;
+}
+
+// ========== HELPERS ========== --Supriya Rawat
+function setLoading(isLoading) {
+    if (isLoading) {
+        lexerOutput.innerHTML = '<div class="empty-placeholder">⏳ Compiling...</div>';
+        parserOutput.innerHTML = '<div class="empty-placeholder">⏳ Compiling...</div>';
+        symbolTableOutput.innerHTML = '<div class="empty-placeholder">⏳ Compiling...</div>';
+        sqlOutput.innerHTML = '<div class="empty-placeholder">⏳ Compiling...</div>';
+    }
+}
+
+function resetOutputs() {
+    lexerOutput.innerHTML = '<div class="empty-placeholder">Tokens here</div>';
+    parserOutput.innerHTML = '<div class="empty-placeholder">AST here</div>';
+    symbolTableOutput.innerHTML = '<div class="empty-placeholder">Symbol table here</div>';
+    sqlOutput.innerHTML = '<div class="empty-placeholder">SQL here</div>';
+}
+
+window.addEventListener('load', () => {
+    if (!examples || Object.keys(examples).length === 0) {
+        sqlOutput.innerHTML = '<pre style="color: #ff5252;">ERROR: examples.js not loaded</pre>';
+    }
+});
+
+console.log('✓ App loaded successfully');
