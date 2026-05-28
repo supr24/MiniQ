@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniQ SQL Compiler</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">MiniQ</span>
+            </div>
+            <div class="header-subtitle">Multi-Phase SQL Compiler with Semantic Analysis</div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+        
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <select id="exampleSelect" class="select-box">
+                    <option value="">📋 Select Example...</option>
+                    <option value="filter">1. Filter Students</option>
+                    <option value="simple_sort">2. Sort by Marks</option>
+                    <option value="limit_results">3. Top 5 Students</option>
+                    <option value="aggregate_sum">4. Total Revenue</option>
+                    <option value="aggregate_count">5. Count Products</option>
+                    <option value="aggregate_avg">6. Average Salary</option>
+                    <option value="group_by_simple">7. Group by Department</option>
+                    <option value="group_by_revenue">8. Revenue by Category</option>
+                    <option value="filter_and_select">9. IT Salary</option>
+                    <option value="filter_and_sort">10. Senior Employees</option>
+                    <option value="high_performers">11. High Performers</option>
+                    <option value="affordable_products">12. Affordable Products</option>
+                    <option value="sales_filtering">13. Recent Orders</option>
+                    <option value="customer_locations">14. Customers by City</option>
+                    <option value="product_inventory">15. Low Stock Alert</option>
+                    <option value="sales_summary">16. Sales Performance</option>
+                    <option value="employee_filter">17. Engineering Team</option>
+                    <option value="email_contacts">18. Student Contacts</option>
+                    <option value="premium_customers">19. VIP Customers</option>
+                    <option value="complex_analysis">20. Top Performers</option>
+                </select>
+            </div>
+
+            <div class="toolbar-right">
+                <button id="runBtn" class="btn-primary">
+                    <span class="btn-icon">▶</span>
+                    Compile
+                </button>
+                <button id="clearBtn" class="btn-secondary">Clear</button>
+                <button id="rulesBtn" class="btn-secondary" title="Show/Hide Rules">
+                    <span>📖</span> Rules
+                </button>
+            </div>
+        </div>
+
+        <!-- RULES PANEL (Hidden by default) -->
+        <div id="rulesPanel" class="rules-panel">
+            <div class="rules-header">
+                <h3>📚 Compiler Rules & Definitions</h3>
+                <button class="close-btn" onclick="toggleRules()">✕</button>
+            </div>
+            
+            <div class="rules-content">
+                
+                <section class="rule-section">
+                    <h4>🔤 MiniQ Language Syntax</h4>
+                    <pre>LOAD &lt;table&gt;
+FILTER &lt;field&gt; &lt;operator&gt; &lt;value&gt;
+SELECT &lt;field1&gt;, &lt;field2&gt;, ...
+SORT BY &lt;field&gt; [ASC|DESC]
+GROUP BY &lt;field&gt;
+AGGREGATE &lt;function&gt;(&lt;field&gt;) AS &lt;alias&gt;, ...
+LIMIT &lt;number&gt;</pre>
+                </section>
+
+                <section class="rule-section">
+                    <h4>🔑 Identifiers</h4>
+                    <p><strong>Definition:</strong> Names of tables, fields, and aliases</p>
+                    <p><strong>Rules:</strong></p>
+                    <ul>
+                        <li>Start with letter or underscore (_)</li>
+                        <li>Contain alphanumeric characters and underscores</li>
+                        <li>Case-sensitive</li>
+                        <li>Examples: <code>students</code>, <code>employee_count</code>, <code>_temp</code></li>
+                    </ul>
+                </section>
+
+                <section class="rule-section">
+                    <h4>📊 Symbol Table</h4>
+                    <p><strong>Definition:</strong> Data structure tracking all declared entities</p>
+                    <p><strong>Contains:</strong></p>
+                    <ul>
+                        <li><strong>Tables:</strong> Loaded table names and their fields</li>
+                        <li><strong>Fields:</strong> Column names and their source table</li>
+                        <li><strong>Aggregates:</strong> Aggregate functions and aliases</li>
+                    </ul>
+                    <p><strong>Purpose:</strong> Validate that referenced fields exist before code generation</p>
+                </section>
+
+                <section class="rule-section">
+                    <h4>🔧 Operators</h4>
+                    <pre>Comparison: > < = >= <= !=
+Example: age > 18, salary = 50000</pre>
+                </section>
+
+                <section class="rule-section">
+                    <h4>∑ Aggregate Functions</h4>
+                    <pre>SUM(field)   - Total of numeric values
+COUNT(*)     - Number of rows
+AVG(field)   - Average of numeric values
+MIN(field)   - Minimum value
+MAX(field)   - Maximum value</pre>
+                </section>
+
+                <section class="rule-section">
+                    <h4>📦 Supported Tables & Fields</h4>
+                    <pre>students: [id, name, age, marks, department, email, gpa]
+sales: [id, product, category, revenue, quantity, date]
+products: [id, name, price, quantity, category, supplier]
+employees: [id, name, department, salary, email, joining_date]
+orders: [id, customer, amount, date, status, product]
+customers: [id, name, email, city, phone, country]</pre>
+                </section>
+
+                <section class="rule-section">
+                    <h4>✅ Semantic Validation Rules</h4>
+                    <ul>
+                        <li>First statement must be LOAD</li>
+                        <li>All referenced fields must exist in loaded table</li>
+                        <li>Aggregate functions only work with valid field names</li>
+                        <li>SORT BY field must exist in selected fields</li>
+                        <li>GROUP BY field must exist</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT: Editor + Phases -->
+        <div class="main-content">
+            
+            <!-- LEFT: Code Editor -->
+            <div class="editor-section">
+                <div class="editor-header">📝 MiniQ Code Input</div>
+                <textarea id="miniqEditor" class="code-editor" placeholder="Select an example or write MiniQ code..."></textarea>
+            </div>
+
+            <!-- RIGHT: Compiler Phases -->
+            <div class="phases-section">
+                
+                <!-- Phase 1: Lexer -->
+                <div class="phase-panel">
+                    <div class="phase-header">Phase 1: Lexer (Tokenization)</div>
+                    <div id="lexerOutput" class="phase-content">
+                        <div class="empty-placeholder">Tokens here</div>
+                    </div>
+                </div>
+
+                <!-- Phase 2: Parser & AST -->
+                <div class="phase-panel">
+                    <div class="phase-header">Phase 2: Parser & AST (Syntax Tree)</div>
+                    <div id="parserOutput" class="phase-content ast-content">
+                        <div class="empty-placeholder">AST here</div>
+                    </div>
+                </div>
+
+                <!-- Phase 3: Symbol Table -->
+                <div class="phase-panel">
+                    <div class="phase-header">Phase 3: Semantic Analysis (Symbol Table)</div>
+                    <div id="symbolTableOutput" class="phase-content">
+                        <div class="empty-placeholder">Symbol table here</div>
+                    </div>
+                </div>
+
+                <!-- Phase 4: SQL Output -->
+                <div class="phase-panel">
+                    <div class="phase-header">Phase 4: Code Generation (SQL)</div>
+                    <div id="sqlOutput" class="phase-content code-output">
+                        <div class="empty-placeholder">SQL here</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INFO CARDS -->
+        <div class="info-section">
+            <div class="info-card">
+                <div class="info-title">📝 MiniQ Language</div>
+                <div class="info-desc">Simple English-like query syntax</div>
+            </div>
+            <div class="info-card">
+                <div class="info-title">🔍 Lexer Phase</div>
+                <div class="info-desc">Breaks code into tokens</div>
+            </div>
+            <div class="info-card">
+                <div class="info-title">🌳 Parser Phase</div>
+                <div class="info-desc">Builds abstract syntax tree</div>
+            </div>
+            <div class="info-card">
+                <div class="info-title">✅ Semantic Phase</div>
+                <div class="info-desc">Validates with symbol table</div>
+            </div>
+            <div class="info-card">
+                <div class="info-title">🗄️ SQL Generator</div>
+                <div class="info-desc">Generates standard SQL</div>
+            </div>
+            <div class="info-card">
+                <div class="info-title">📚 Documentation</div>
+                <div class="info-desc">Click Rules button above</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        MiniQ SQL Compiler - Team Kishori | Compiler Design PBL
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="examples.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
