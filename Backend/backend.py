@@ -273,9 +273,8 @@ class Parser:
         self.pos += 1
         return token
 
-
 # ============================================
-# PHASE 4: SEMANTIC ANALYZER
+# PHASE 4: SEMANTIC ANALYZER - Supriya Rawat
 # ============================================
 class SemanticAnalyzer:
     SCHEMAS = {
