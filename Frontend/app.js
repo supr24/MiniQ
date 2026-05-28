@@ -82,3 +82,97 @@ async function compileCode() {
         setLoading(false);
     }
 }
+
+// ========== DISPLAY RESULTS ========== -- Ridham Singh
+function displayResults(result) {
+    // Phase 1: Lexer
+    if (result.lexer && result.lexer.length > 0) {
+        const tokens = result.lexer.map(t => `[${t.type}] ${t.value}`).join('\n');
+        lexerOutput.innerHTML = `<pre>${tokens}</pre>`;
+    } else {
+        lexerOutput.innerHTML = '<div class="empty-placeholder">No tokens</div>';
+    }
+    
+    // Phase 2: Parser & AST (PROPER TREE)
+    if (result.ast && result.ast.statements) {
+        parserOutput.innerHTML = buildASTTree(result.ast);
+    } else {
+        parserOutput.innerHTML = '<div class="empty-placeholder">No AST</div>';
+    }
+    
+    // Phase 3: Symbol Table
+    if (result.semantic && result.semantic.symbolTable) {
+        symbolTableOutput.innerHTML = `<pre>${formatSymbolTable(result.semantic.symbolTable)}</pre>`;
+    } else {
+        symbolTableOutput.innerHTML = '<div class="empty-placeholder">No symbol table</div>';
+    }
+    
+    // Phase 4: SQL
+    if (result.errors && result.errors.length > 0) {
+        sqlOutput.innerHTML = `<pre style="color: #ff5252;">❌ ERRORS:\n${result.errors.join('\n')}</pre>`;
+    } else if (result.sql) {
+        sqlOutput.innerHTML = `<pre>${result.sql}</pre>`;
+    } else {
+        sqlOutput.innerHTML = '<div class="empty-placeholder">No SQL</div>';
+    }
+}
+
+// ========== BUILD AST TREE (PROPER TREE STRUCTURE) ========== -- Ridham Singh
+function buildASTTree(ast) {
+    let html = '<pre>';
+    html += '📦 <span class="ast-keyword">Program</span>\n';
+    
+    if (ast.statements && ast.statements.length > 0) {
+        ast.statements.forEach((stmt, idx) => {
+            const isLast = idx === ast.statements.length - 1;
+            const prefix = isLast ? '└─ ' : '├─ ';
+            const childPrefix = isLast ? '   ' : '│  ';
+            
+            html += prefix;
+            
+            if (stmt.type === 'LoadStatement') {
+                html += `<span class="ast-keyword">LOAD</span> `;
+                html += `<span class="ast-value">${stmt.table}</span>\n`;
+            }
+            else if (stmt.type === 'FilterStatement') {
+                html += `<span class="ast-keyword">FILTER</span>\n`;
+                html += childPrefix + `├─ field: <span class="ast-value">${stmt.condition.field}</span>\n`;
+                html += childPrefix + `├─ operator: <span class="ast-value">${stmt.condition.operator}</span>\n`;
+                html += childPrefix + `└─ value: <span class="ast-value">${stmt.condition.value}</span>\n`;
+            }
+            else if (stmt.type === 'SelectStatement') {
+                html += `<span class="ast-keyword">SELECT</span> `;
+                html += `<span class="ast-value">[${stmt.fields.join(', ')}]</span>\n`;
+            }
+            else if (stmt.type === 'SortStatement') {
+                html += `<span class="ast-keyword">SORT BY</span> `;
+                html += `<span class="ast-value">${stmt.field}</span> `;
+                html += `<span class="ast-value">${stmt.direction.toUpperCase()}</span>\n`;
+            }
+            else if (stmt.type === 'GroupStatement') {
+                html += `<span class="ast-keyword">GROUP BY</span> `;
+                html += `<span class="ast-value">${stmt.field}</span>\n`;
+            }
+            else if (stmt.type === 'AggregateStatement') {
+                html += `<span class="ast-keyword">AGGREGATE</span>\n`;
+                stmt.functions.forEach((func, fIdx) => {
+                    const fIsLast = fIdx === stmt.functions.length - 1;
+                    const fPrefix = fIsLast ? '└─ ' : '├─ ';
+                    html += childPrefix + fPrefix;
+                    html += `<span class="ast-value">${func.function}(${func.field})</span>`;
+                    if (func.alias) {
+                        html += ` <span class="ast-keyword">AS</span> <span class="ast-value">${func.alias}</span>`;
+                    }
+                    html += '\n';
+                });
+            }
+             else if (stmt.type === 'LimitStatement') {
+                html += `<span class="ast-keyword">LIMIT</span> `;
+                html += `<span class="ast-value">${stmt.count}</span>\n`;
+            }
+        });
+    }
+    
+    html += '</pre>';
+    return html;
+}
