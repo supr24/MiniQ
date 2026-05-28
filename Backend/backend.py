@@ -427,3 +427,19 @@ def compile():
 @app.route('/api/health', methods=['GET'])
 def health():
     return jsonify({'status': 'ok', 'message': 'Backend running'})
+
+# ============================================
+# START SERVER - Urvashi Kashyap
+# ============================================
+if __name__ == '__main__':
+    print('\n' + '='*50)
+    print('  🔥 MiniQ SQL Compiler Backend')
+    print('  🌐 Running on http://localhost:5000')
+    print('='*50 + '\n')
+    print('✓ Lexer ready')
+    print('✓ Parser ready')
+    print('✓ Semantic Analyzer ready')
+    print('✓ Code Generator ready')
+    print('\n📝 Open http://localhost:3000 in browser\n')
+    
+    app.run(debug=True, port=5000, use_reloader=False)
