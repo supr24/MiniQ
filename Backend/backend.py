@@ -272,3 +272,67 @@ class Parser:
             return None
         self.pos += 1
         return token
+
+
+# ============================================
+# PHASE 4: SEMANTIC ANALYZER
+# ============================================
+class SemanticAnalyzer:
+    SCHEMAS = {
+        'students': ['id', 'name', 'age', 'marks', 'department', 'email', 'gpa'],
+        'sales': ['id', 'product', 'category', 'revenue', 'quantity', 'date'],
+        'products': ['id', 'name', 'price', 'quantity', 'category', 'supplier'],
+        'employees': ['id', 'name', 'department', 'salary', 'email', 'joining_date'],
+        'orders': ['id', 'customer', 'amount', 'date', 'status', 'product'],
+        'customers': ['id', 'name', 'email', 'city', 'phone', 'country']
+    }
+    
+    def __init__(self, ast):
+        self.ast = ast
+        self.errors = []
+        self.symbol_table = {'tables': {}, 'fields': {}, 'aggregates': []}
+        self.current_table = None
+    
+    def analyze(self):
+        # First pass: load table
+        for stmt in self.ast.get('statements', []):
+            if stmt['type'] == 'LoadStatement':
+                self.current_table = stmt['table']
+                self.symbol_table['tables'][stmt['table']] = {
+                    'name': stmt['table'],
+                    'fields': self.SCHEMAS.get(stmt['table'], ['id', 'name', 'value'])
+                }
+        
+        # Second pass: validate
+        for stmt in self.ast.get('statements', []):
+            if stmt['type'] == 'FilterStatement':
+                self.validate_filter(stmt)
+            elif stmt['type'] == 'SelectStatement':
+                self.validate_select(stmt)
+            elif stmt['type'] == 'AggregateStatement':
+                for f in stmt.get('functions', []):
+                    self.symbol_table['aggregates'].append(f)
+        
+        return {
+            'valid': len(self.errors) == 0,
+            'errors': self.errors,
+            'symbolTable': self.symbol_table
+        }
+    
+    def validate_filter(self, stmt):
+        if not self.current_table:
+            self.errors.append('FILTER: No table loaded')
+            return
+        fields = self.SCHEMAS.get(self.current_table, [])
+        field = stmt['condition']['field']
+        if field not in fields:
+            self.errors.append(f"Field '{field}' not found")
+    
+    def validate_select(self, stmt):
+        if not self.current_table:
+            self.errors.append('SELECT: No table loaded')
+            return
+        fields = self.SCHEMAS.get(self.current_table, [])
+        for f in stmt['fields']:
+            if f != '*' and f not in fields:
+                self.errors.append(f"Field '{f}' not found")
