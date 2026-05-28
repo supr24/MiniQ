@@ -374,3 +374,38 @@ class CodeGen:
         select = f"SELECT {', '.join(self.aggregates) if self.aggregates else ', '.join(self.select_fields)}"
         query = '\n'.join(filter(None, [select, f"FROM {self.from_table}", self.where, self.group_by, self.order_by, self.limit]))
         return query + ';'
+
+# ============================================
+# MAIN COMPILER - Urvashi Kashyap
+# ============================================
+class Compiler:
+    def compile(self, code):
+        result = {
+            'lexer': None,
+            'ast': None,
+            'semantic': None,
+            'sql': None,
+            'errors': []
+        }
+        
+        try:
+            lexer = Lexer(code)
+            result['lexer'] = lexer.tokenize()
+            
+            parser = Parser(result['lexer'])
+            result['ast'] = parser.parse()
+            
+            semantic = SemanticAnalyzer(result['ast'])
+            result['semantic'] = semantic.analyze()
+            
+            if not result['semantic']['valid']:
+                result['errors'] = result['semantic']['errors']
+                return result
+            
+            gen = CodeGen(result['ast'])
+            result['sql'] = gen.generate()
+            
+        except Exception as e:
+            result['errors'] = [f"Error: {str(e)}"]
+        
+        return result
