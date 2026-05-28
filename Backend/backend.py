@@ -409,3 +409,21 @@ class Compiler:
             result['errors'] = [f"Error: {str(e)}"]
         
         return result
+
+
+# ============================================
+# FLASK ROUTES - Supriya Rawat
+# ============================================
+@app.route('/api/compile', methods=['POST'])
+def compile():
+    data = request.json
+    code = data.get('code', '')
+    
+    compiler = Compiler()
+    result = compiler.compile(code)
+    
+    return jsonify(result)
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'ok', 'message': 'Backend running'})
